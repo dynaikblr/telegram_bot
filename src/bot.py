@@ -65,9 +65,12 @@ Simply send me any message and I'll respond using AI!
 
     def run(self) -> None:
         """Run the bot using webhook (required for port binding on Render)."""
-        port = int(os.environ.get("PORT", 8443))  # Render provides this PORT env variable
+        port = int(os.environ.get("PORT", 8443))
         self.application.run_webhook(
             listen="0.0.0.0",
             port=port,
-            webhook_url=f"{config.WEBHOOK_URL}/bot{config.TELEGRAM_TOKEN}"
+            webhook_url=f"{config.WEBHOOK_URL}/bot{config.TELEGRAM_TOKEN}",
+            # 👇 THIS tells the internal web server to match the URL path:
+            path=f"/bot{config.TELEGRAM_TOKEN}"
         )
+
