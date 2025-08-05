@@ -21,8 +21,12 @@ class TelegramBot:
     def __init__(self):
         """Initialize the bot with necessary handlers."""
         self.llm = LLMHandler()
-        self.application = Application.builder().token(config.TELEGRAM_TOKEN).build()
-
+        self.application = (
+            Application.builder()
+            .token(config.TELEGRAM_TOKEN)
+            .webhook_path(f"/bot{config.TELEGRAM_TOKEN}")
+            .build()
+        )
         # Add handlers
         self.application.add_handler(CommandHandler("start", self.start_command))
         self.application.add_handler(CommandHandler("help", self.help_command))
@@ -69,8 +73,7 @@ Simply send me any message and I'll respond using AI!
         self.application.run_webhook(
             listen="0.0.0.0",
             port=port,
-            webhook_url=f"{config.WEBHOOK_URL}/bot{config.TELEGRAM_TOKEN}",
-            # 👇 THIS tells the internal web server to match the URL path:
-            path=f"/bot{config.TELEGRAM_TOKEN}"
+            webhook_url=f"{config.WEBHOOK_URL}/bot{config.TELEGRAM_TOKEN}"
         )
+
 
