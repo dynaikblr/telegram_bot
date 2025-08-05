@@ -1,6 +1,8 @@
 # bot.py
 
 import os
+import re
+import asyncio
 import logging
 from telegram import Update
 from telegram.ext import (
@@ -37,10 +39,69 @@ class TelegramBot:
             MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_message)
         )
 
+    def split_into_chunks(self, text: str, max_chunk_size: int = 150) -> list[str]:
+        """
+        Split response into natural chunks at sentence or phrase boundaries.
+        
+        Args:
+            text (str): The text to split
+            max_chunk_size (int): Maximum size of each chunk
+            
+        Returns:
+            list[str]: List of text chunks
+        """
+        # Split by sentence endings or natural breaks
+        splits = re.split(r'([.!?।] )', text)
+        chunks = []
+        current_chunk = ""
+
+        # Recombine splits while respecting max chunk size
+        for i in range(0, len(splits)-1, 2):
+            sentence = splits[i] + (splits[i+1] if i+1 < len(splits) else "")
+            
+            if len(current_chunk) + len(sentence) <= max_chunk_size:
+                current_chunk += sentence
+            else:
+                if current_chunk:
+                    chunks.append(current_chunk.strip())
+                current_chunk = sentence
+
+        # Add the last chunk and any remaining text
+        if current_chunk:
+            chunks.append(current_chunk.strip())
+        if len(splits) % 2 == 1 and splits[-1]:
+            chunks.append(splits[-1].strip())
+
+        # If any chunk is still too long, split by commas or spaces
+        final_chunks = []
+        for chunk in chunks:
+            if len(chunk) > max_chunk_size:
+                # Try splitting by commas first
+                subchunks = re.split(r'(, )', chunk)
+                current = ""
+                
+                for i in range(0, len(subchunks)-1, 2):
+                    subchunk = subchunks[i] + (subchunks[i+1] if i+1 < len(subchunks) else "")
+                    if len(current) + len(subchunk) <= max_chunk_size:
+                        current += subchunk
+                    else:
+                        if current:
+                            final_chunks.append(current.strip())
+                        current = subchunk
+                
+                if current:
+                    final_chunks.append(current.strip())
+                if len(subchunks) % 2 == 1 and subchunks[-1]:
+                    final_chunks.append(subchunks[-1].strip())
+            else:
+                final_chunks.append(chunk)
+
+        return [c for c in final_chunks if c]  # Remove any empty chunks
+
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Respond to /start command."""
         await update.message.reply_text(
-            "👋 Hello! I'm your AI assistant. Send me a message and I'll respond using LLM."
+            "👋 Hello! I'm Ashish. Ask me how I convicned to fuck Divya?"
         )
 
     async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -79,13 +140,21 @@ class TelegramBot:
             response = self.llm.get_response(self.conversations[user_id])
             logger.info(f"Bot response to {user_name}: {response}")
 
-            # Add assistant's response to history
+            # Split response into natural chunks (sentences or phrases)
+            chunks = self.split_into_chunks(response)
+            full_response = ""
+
+            # Send each chunk with a small delay to simulate typing
+            for chunk in chunks:
+                await update.message.reply_text(chunk)
+                full_response += chunk + "\n"
+                await asyncio.sleep(1.5)  # Add 1.5 second delay between messages
+
+            # Add the full response to conversation history
             self.conversations[user_id].append({
                 "role": "assistant",
-                "content": response
+                "content": full_response.strip()
             })
-
-            await update.message.reply_text(response)
 
         except Exception as e:
             logger.exception("Error while handling message")
