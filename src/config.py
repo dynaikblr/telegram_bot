@@ -16,6 +16,8 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 if not OPENROUTER_API_KEY:
     raise ValueError("OPENROUTER_API_KEY not found in environment variables")
 
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+
 # LLM configuration
 MAX_TOKENS = 500  # Maximum length of the response
 TEMPERATURE = 0.7  # Lower for more focused responses, higher for more creative ones
