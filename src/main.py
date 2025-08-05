@@ -2,6 +2,7 @@
 
 import sys
 import logging
+import telegram
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent))
 from bot import TelegramBot
@@ -31,6 +32,7 @@ def main():
     """Initialize and run the bot."""
     print("Starting bot initialization...")
     logger.info("Starting Telegram LLM Bot...")
+    logger.info("python-telegram-bot version:", telegram.__version__)
     try:
         logger.debug("Creating TelegramBot instance...")
         print("Creating bot instance...")
