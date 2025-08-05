@@ -24,11 +24,9 @@ class TelegramBot:
     """Main bot class for handling Telegram interactions via webhook."""
 
     def __init__(self):
-        """Initialize the bot with handlers and webhook path."""
+        """Initialize the bot with handlers."""
         self.llm = LLMHandler()
-        self.application = Application.builder() \
-            .token(config.TELEGRAM_TOKEN) \
-            .build(webhook_path=f"/bot{config.TELEGRAM_TOKEN}")
+        self.application = Application.builder().token(config.TELEGRAM_TOKEN).build()
 
         # Register command and message handlers
         self.application.add_handler(CommandHandler("start", self.start_command))
@@ -74,7 +72,7 @@ class TelegramBot:
     def run(self) -> None:
         """Start the bot via webhook binding for Render."""
         port = int(os.environ.get("PORT", 8443))
-        webhook_url = f"{config.WEBHOOK_URL}/bot{config.TELEGRAM_TOKEN}"
+        webhook_url = f"{config.WEBHOOK_URL}/{config.TELEGRAM_TOKEN}"
         logger.info(f"Starting webhook on port {port}, URL: {webhook_url}")
         self.application.run_webhook(
             listen="0.0.0.0",
