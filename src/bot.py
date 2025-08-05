@@ -27,6 +27,8 @@ class TelegramBot:
         """Initialize the bot with handlers."""
         self.llm = LLMHandler()
         self.application = Application.builder().token(config.TELEGRAM_TOKEN).build()
+        # Initialize conversation history dictionary
+        self.conversations = {}
 
         # Register command and message handlers
         self.application.add_handler(CommandHandler("start", self.start_command))
@@ -54,12 +56,34 @@ class TelegramBot:
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Receive messages and forward to LLM."""
         try:
+            user_id = update.message.from_user.id
             user_message = update.message.text
             user_name = update.message.from_user.first_name
-            logger.info(f"Received message from {user_name}: {user_message}")
+            logger.info(f"Received message from {user_name} (ID: {user_id}): {user_message}")
 
-            response = self.llm.get_response(user_message)
-            logger.info(f"Bot response: {response}")
+            # Initialize conversation history for new users
+            if user_id not in self.conversations:
+                self.conversations[user_id] = []
+
+            # Add user message to history
+            self.conversations[user_id].append({
+                "role": "user",
+                "content": user_message
+            })
+
+            # Keep only last 6 turns (12 messages - 6 from user, 6 from assistant)
+            if len(self.conversations[user_id]) > 12:
+                self.conversations[user_id] = self.conversations[user_id][-12:]
+
+            # Get response using full conversation history
+            response = self.llm.get_response(self.conversations[user_id])
+            logger.info(f"Bot response to {user_name}: {response}")
+
+            # Add assistant's response to history
+            self.conversations[user_id].append({
+                "role": "assistant",
+                "content": response
+            })
 
             await update.message.reply_text(response)
 

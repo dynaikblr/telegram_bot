@@ -17,12 +17,12 @@ class LLMHandler:
             api_key=config.OPENROUTER_API_KEY
         )
     
-    def get_response(self, message: str) -> str:
+    def get_response(self, messages: list) -> str:
         """
-        Get a response from the LLM based on the input message.
+        Get a response from the LLM based on the conversation history.
         
         Args:
-            message (str): The input message to process
+            messages (list): List of message dictionaries with 'role' and 'content'
             
         Returns:
             str: The generated response
@@ -32,16 +32,16 @@ class LLMHandler:
         """
         try:
             logger.info("Sending request to Open Router API...")
+            # Prepend the system message to the conversation history
+            full_messages = [{"role": "system", "content": config.SYSTEM_PROMPT}] + messages
+            
             completion = self.client.chat.completions.create(
                 extra_headers={
                     "HTTP-Referer": config.SITE_URL,
                     "X-Title": config.SITE_NAME,
                 },
                 model=config.MODEL,
-                messages=[
-                    {"role": "system", "content": config.SYSTEM_PROMPT},
-                    {"role": "user", "content": message}
-                ],
+                messages=full_messages,
                 max_tokens=config.MAX_TOKENS,
                 temperature=config.TEMPERATURE
             )
