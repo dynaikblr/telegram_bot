@@ -96,10 +96,15 @@ class TelegramBot:
     def run(self) -> None:
         """Start the bot via webhook binding for Render."""
         port = int(os.environ.get("PORT", 8443))
-        webhook_url = f"{config.WEBHOOK_URL}/{config.TELEGRAM_TOKEN}"
-        logger.info(f"Starting webhook on port {port}, URL: {webhook_url}")
+        webhook_path = f"/bot{config.TELEGRAM_TOKEN}"
+        webhook_url = f"{config.WEBHOOK_URL}{webhook_path}"
+        
+        logger.info(f"Starting webhook on port {port}")
+        logger.info(f"Webhook URL: {webhook_url}")
+        
         self.application.run_webhook(
             listen="0.0.0.0",
             port=port,
+            url_path=webhook_path,
             webhook_url=webhook_url
         )
